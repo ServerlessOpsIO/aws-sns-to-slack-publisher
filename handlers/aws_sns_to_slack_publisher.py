@@ -116,12 +116,12 @@ def _publish_slack_message(token: str, channel: str, message: dict) -> dict:
 
 
 @retry(wait=wait_exponential(), stop=stop_after_delay(15))
-def _publish_sns_message(sns_topic_arn: str, message: str) -> dict:
+def _publish_sns_message(sns_topic_arn: str, message: dict) -> dict:
     '''Publish message to SNS topic'''
     try:
         r = SNS.publish(
             TopicArn=sns_topic_arn,
-            Message=message
+            Message=json.dumps(message)
         )
     except ClientError as e:
         exc_info = sys.exc_info()
@@ -170,7 +170,7 @@ def handler(event, context):
 
     if SNS_PUBLISH_RESPONSE:
         sns_response = _publish_sns_message(RESPONSE_SNS_TOPIC_ARN,
-                                            json.dumps(slack_response))
+                                            slack_response)
         resp['sns_response'] = sns_response
 
 
