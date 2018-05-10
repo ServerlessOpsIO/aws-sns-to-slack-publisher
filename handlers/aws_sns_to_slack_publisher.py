@@ -43,10 +43,13 @@ def _get_message_from_event(event: dict) -> dict:
 
 def _publish_slack_message(token: str, channel: str, message: dict) -> dict:
     '''Publish message to Slack'''
+    message['channel'] = channel
+    _logger.debug('Slack message: {}'.format(json.dumps(message)))
+    # XXX: Don't log the token in the debug call.
+    message['token'] = token
+
     r = SLACK.api_call(
         "chat.postMessage",
-        token=token,
-        channel=channel,
         **message
     )
     _logger.debug('Slack response: {}'.format(json.dumps(r)))
