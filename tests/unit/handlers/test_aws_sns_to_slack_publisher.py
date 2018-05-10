@@ -19,7 +19,7 @@ EVENT_FILE = os.path.join(
     'aws_sns_to_slack_publisher.json'
 )
 
-SNS_TOPIC_ARN = 'arn:aws:sns:us-east-1:000000000000:test-topic'
+SNS_TOPIC_NAME = "mock-aws-sns-to-slack-publisher-responses"
 SLACK_CHANNEL = "#testing"
 
 
@@ -28,6 +28,7 @@ def event(event_file=EVENT_FILE):
     '''Trigger event'''
     with open(event_file) as f:
         return json.load(f)
+
 
 @pytest.fixture()
 def slack_message(event):
@@ -54,18 +55,20 @@ def sns_message(slack_response):
 
 
 @pytest.fixture()
-def sns_topic_arn(topic_arn=SNS_TOPIC_ARN):
-    '''SNS Topic ARN'''
-    return topic_arn
+def sns_client():
+    '''SNS client'''
+    return boto3.client('sns')
 
 
 def test__get_message_from_event(event):
     '''Test fetching message from test event.'''
     r = h._get_message_from_event(event)
 
-    assert False
+    assert isinstance(r, dict)
+    assert 'text' in r.keys()
 
 
+@pytest.mark.skip(reason="Not sure how to mock this yet.")
 def test__publish_slack_message(slack_channel, slack_message):
     '''Test publish a test slack message.'''
     assert False
@@ -73,6 +76,13 @@ def test__publish_slack_message(slack_channel, slack_message):
 
 @mock_sts
 @mock_sns
-def test__publish_sns_message(sns_topic_arn, sns_message):
+def test__publish_sns_message(sns_client, sns_message, sns_topic_name=SNS_TOPIC_NAME):
     '''Test publish an SNS message.'''
-    assert False
+
+    sns_create_topic_resp = sns_client.create_topic(Name=SNS_TOPIC_NAME)
+    sns_publish_resp = h._publish_sns_message(
+        sns_create_topic_resp.get('TopicArn'),
+        json.dumps(sns_message)
+    )
+
+    assert sns_publish_resp.get('ResponseMetadata').get('HTTPStatusCode') == 200
