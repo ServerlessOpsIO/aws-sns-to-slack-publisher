@@ -3,8 +3,10 @@
 import json
 import logging
 import os
+import sys
 
 import boto3
+from botocore.exceptions import ClientError
 from slackclient import SlackClient
 
 log_level = os.environ.get('LOG_LEVEL', 'INFO')
@@ -17,6 +19,21 @@ SLACK = SlackClient(SLACK_API_TOKEN)
 
 RESPONSE_SNS_TOPIC_ARN = os.environ.get('RESPONSE_SNS_TOPIC_ARN')
 SNS = boto3.client('sns')
+
+
+class HandlerBaseError(Exception):
+    '''Base error class'''
+
+
+class SlackPublishError(HandlerBaseError):
+    '''Slack publish error'''
+    def __init__(self, response):
+        self.msg = 'Slack API Error - {}'.format(response.get('error'))
+        super(HandlerBaseError, self).__init__(self.msg)
+
+
+class SnsPublishError(HandlerBaseError):
+    '''SNS publish error'''
 
 
 def _get_message_from_event(event: dict) -> dict:
@@ -33,17 +50,25 @@ def _publish_slack_message(token: str, channel: str, message: dict) -> dict:
         **message
     )
     _logger.debug('Slack response: {}'.format(json.dumps(r)))
-    return r
+
+    if r.get('ok') is not True:
+        raise SlackPublishError(r)
+    else:
+        return r
 
 
 def _publish_sns_message(sns_topic_arn: str, message: str) -> dict:
     '''Publish message to SNS topic'''
-    r = SNS.publish(
-        TopicArn=sns_topic_arn,
-        Message=message
-    )
-    _logger.debug('SNS response: {}'.format(json.dumps(r)))
+    try:
+        r = SNS.publish(
+            TopicArn=sns_topic_arn,
+            Message=message
+        )
+    except ClientError as e:
+        exc_info = sys.exc_info()
+        raise SnsPublishError(e).with_traceback(exc_info[2])
 
+    _logger.debug('SNS response: {}'.format(json.dumps(r)))
     return r
 
 
