@@ -118,6 +118,7 @@ def _publish_slack_message(token: str, channel: str, message: dict) -> dict:
 @retry(wait=wait_exponential(), stop=stop_after_delay(15))
 def _publish_sns_message(sns_topic_arn: str, message: dict) -> dict:
     '''Publish message to SNS topic'''
+    _logger.debug('SNS message: {}'.format(json.dumps(message)))
     try:
         r = SNS.publish(
             TopicArn=sns_topic_arn,
