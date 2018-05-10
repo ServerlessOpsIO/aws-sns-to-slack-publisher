@@ -24,12 +24,13 @@ def _get_message_from_event(event: dict) -> dict:
     return json.loads(event.get('Records')[0].get('Sns').get('Message'))
 
 
-def _publish_slack_message(channel: str, message: dict) -> dict:
+def _publish_slack_message(token: str, channel: str, message: dict) -> dict:
     '''Publish message to Slack'''
     r = SLACK.api_call(
         "chat.postMessage",
-        channel=json.dumps(channel),
-        text=message
+        token=token,
+        channel=channel,
+        **message
     )
     _logger.debug('Slack response: {}'.format(json.dumps(r)))
     return r
@@ -50,8 +51,11 @@ def handler(event, context):
     '''Function entry'''
     _logger.debug('Event received: {}'.format(json.dumps(event)))
     slack_message = _get_message_from_event(event)
-    slack_response = _publish_slack_message(SLACK_DEFAULT_CHANNEL, slack_message)
-    sns_response = _publish_sns_message(RESPONSE_SNS_TOPIC_ARN, json.dumps(slack_response))
+    slack_response = _publish_slack_message(SLACK_API_TOKEN,
+                                            SLACK_DEFAULT_CHANNEL,
+                                            slack_message)
+    sns_response = _publish_sns_message(RESPONSE_SNS_TOPIC_ARN,
+                                        json.dumps(slack_response))
 
     resp = {
         'slack_response': slack_response,
