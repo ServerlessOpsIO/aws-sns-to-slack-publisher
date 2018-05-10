@@ -12,7 +12,9 @@ custom:
   log_level: "${env:LOG_LEVEL, 'INFO'}"
 
   slack_api_token: "${env:SLACK_API_TOKEN, 'INSERT_TOKEN'}"
-  slack_default_channel: "${env:SLACK_DEFAULT_CHANNEL, '#notifications'}"
+  # NOTE: passing in a default channel name with the leading '#' triggers an
+  # issue with SLS variable interpolation
+  slack_default_channel: "${env:SLACK_DEFAULT_CHANNEL, 'notifications'}"
 
   pythonRequirements:
     dockerizePip: false

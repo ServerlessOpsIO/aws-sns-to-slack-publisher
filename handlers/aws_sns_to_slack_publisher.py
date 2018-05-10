@@ -25,15 +25,54 @@ class HandlerBaseError(Exception):
     '''Base error class'''
 
 
-class SlackPublishError(HandlerBaseError):
+class SlackApiError(HandlerBaseError):
+    '''Slack API error class'''
+    def __init__(self, response: dict):
+        self.msg = 'Slack error - {}'.format(response.get('error'))
+        super(HandlerBaseError, self).__init__(self.msg)
+
+
+class SlackChannelListError(SlackApiError):
     '''Slack publish error'''
-    def __init__(self, response):
-        self.msg = 'Slack API Error - {}'.format(response.get('error'))
+
+
+class SlackPublishError(SlackApiError):
+    '''Slack publish error'''
+
+
+class SlackInvalidChannelNameError(HandlerBaseError):
+    '''Slack invalid channel name'''
+    def __init__(self, channel: str):
+        self.msg = 'invalid channel name - {}'.format(channel)
         super(HandlerBaseError, self).__init__(self.msg)
 
 
 class SnsPublishError(HandlerBaseError):
     '''SNS publish error'''
+
+
+def _check_slack_channel_exists(token: str, channel: str) -> None:
+    '''Check given Slack channel exists'''
+    r = SLACK.api_call(
+        "channels.list",
+        token=token,
+    )
+    _logger.debug('Slack response: {}'.format(json.dumps(r)))
+
+    if r.get('ok') is not True:
+        raise SlackChannelListError(r)
+
+    channel_found = False
+    for c in r.get('channels'):
+        this_channel = c.get('name')
+        if channel == this_channel:
+            channel_found = True
+            break
+
+    if channel_found is False:
+        raise SlackInvalidChannelNameError(channel)
+    else:
+        return r
 
 
 def _get_message_from_event(event: dict) -> dict:
@@ -75,12 +114,24 @@ def _publish_sns_message(sns_topic_arn: str, message: str) -> dict:
     return r
 
 
+def _sanitize_slack_channel_name(channel_name: str) -> str:
+    '''Cleanup channel name'''
+    # channel names are inconsistently used in the API so we make it so here.
+    if channel_name[0] == '#':
+        fixed_name = channel_name[1:]
+    else:
+        fixed_name = channel_name
+    return fixed_name
+
+
 def handler(event, context):
     '''Function entry'''
     _logger.debug('Event received: {}'.format(json.dumps(event)))
     slack_message = _get_message_from_event(event)
+    slack_channel = _sanitize_slack_channel_name(SLACK_DEFAULT_CHANNEL)
+    _check_slack_channel_exists(SLACK_API_TOKEN, slack_channel)
     slack_response = _publish_slack_message(SLACK_API_TOKEN,
-                                            SLACK_DEFAULT_CHANNEL,
+                                            slack_channel,
                                             slack_message)
     sns_response = _publish_sns_message(RESPONSE_SNS_TOPIC_ARN,
                                         json.dumps(slack_response))
