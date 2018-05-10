@@ -1,0 +1,41 @@
+# Compiled stuff
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Dev
+.mypy_cache/
+.pytest_cache/
+
+# pyenv
+.python-version
+
+# Serverless directories
+.serverless
+
+# Serverless plugins / NPM.
+package-lock.json
+node_modules/
+
+# IDE
+.settings/
+.project
+.pydevproject

@@ -1,0 +1,64 @@
+# <DESCRIBE SERVICE>
+service: aws-sns-to-slack-publisher
+
+plugins:
+  - serverless-python-requirements
+  - serverless-iam-roles-per-function
+
+
+custom:
+  stage: "${opt:stage, env:SLS_STAGE, 'dev'}"
+  profile: "${opt:aws-profile, env:AWS_PROFILE, env:AWS_DEFAULT_PROFILE, 'default'}"
+  log_level: "${env:LOG_LEVEL, 'INFO'}"
+
+  slack_api_token: "${env:SLACK_API_TOKEN, 'INSERT_TOKEN'}"
+  slack_default_channel: "${env:SLACK_DEFAULT_CHANNEL, '#notifications'}"
+
+  pythonRequirements:
+    dockerizePip: false
+
+
+provider:
+  name: aws
+  profile: ${self:custom.profile}
+  stage: ${self:custom.stage}
+  runtime: python3.6
+  environment:
+    LOG_LEVEL: ${self:custom.log_level}
+  stackTags:
+    x-service: aws-sns-to-slack-publisher
+    x-stack: ${self:service}-${self:provider.stage}
+
+
+functions:
+  SlackPublish:
+    handler: handlers/aws_sns_to_slack_publisher.handler
+    description: "Publish message from SNS to Slack"
+    memorySize: 128
+    timeout: 10
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action: "SNS:Publish"
+        Resource:
+          Ref: SlackResponseSnsTopic
+    environment:
+      SLACK_API_TOKEN: "${self:custom.slack_api_token}"
+      SLACK_DEFAULT_CHANNEL: "${self:custom.slack_default_channel}"
+      RESPONSE_SNS_TOPIC_ARN:
+        Ref: SlackResponseSnsTopic
+
+
+resources:
+  Resources:
+    SlackResponseSnsTopic:
+      Type: "AWS::SNS::Topic"
+
+
+  Outputs:
+    SlackResponseSnsTopicArn:
+      Description: "AWS SNS Topic ARN"
+      Value:
+        Ref: SlackResponseSnsTopic
+      Export:
+        Name: "${self:service}-${self:provider.stage}-SlackResponseSnsTopicArn"
+
