@@ -2,4 +2,4 @@
 # testing tools happy.
 boto3
 slackclient
-
+tenacity
