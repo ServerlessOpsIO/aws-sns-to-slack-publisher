@@ -19,6 +19,9 @@ custom:
   # If you don't need the SNS response published, then don't publish it.
   sns_publish_response: "${env:SNS_PUBLISH_RESPONSE, 'false'}"
 
+  # Name of export to find SNS topic ARN to subscribe to.
+  sns_publisher_topic_export: "${env:SNS_PUBLISHER_TOPIC_EXPORT, ''}"
+
   pythonRequirements:
     dockerizePip: false
 
@@ -78,8 +81,38 @@ resources:
         - true
         - false
 
+    SnsPublisherTopicExport:
+      Type: String
+      Description: "Name of the CloudFormation export wit the Sns topic ARN to subscribe to"
+      Default: "${self:custom.sns_publisher_topic_export}"
+
 
   Resources:
+    EventPublishSnsSubscription:
+      Type: "AWS::SNS::Subscription"
+      Properties:
+        TopicArn:
+          Fn::ImportValue:
+            Ref: SnsPublisherTopicExport
+        Protocol: lambda
+        Endpoint:
+          Fn::GetAtt:
+            - SlackPublishLambdaFunction
+            - Arn
+
+
+    S3BillingItemWriterLambdaPermission:
+      Type: 'AWS::Lambda::Permission'
+      Properties:
+        Action: "lambda:InvokeFunction"
+        FunctionName:
+          Ref: SlackPublishLambdaFunction
+        Principal: 'sns.amazonaws.com'
+        SourceArn:
+          Fn::ImportValue:
+            Ref: SnsPublisherTopicExport
+
+
     SlackResponseSnsTopic:
       Type: "AWS::SNS::Topic"
 
