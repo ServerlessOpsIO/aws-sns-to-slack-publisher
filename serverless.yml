@@ -47,14 +47,38 @@ functions:
         Resource:
           Ref: SlackResponseSnsTopic
     environment:
-      SLACK_API_TOKEN: "${self:custom.slack_api_token}"
-      SLACK_DEFAULT_CHANNEL: "${self:custom.slack_default_channel}"
-      SNS_PUBLISH_RESPONSE: "${self:custom.sns_publish_response}"
+      SLACK_API_TOKEN:
+        Ref: SlackApiToken
+      SLACK_DEFAULT_CHANNEL:
+        Ref: SlackDefaultChannel
+      SNS_PUBLISH_RESPONSE:
+        Ref: SnsPublishResponse
       RESPONSE_SNS_TOPIC_ARN:
         Ref: SlackResponseSnsTopic
 
 
 resources:
+
+  Parameters:
+    SlackApiToken:
+      Type: String
+      Description: "Slack API token"
+      Default: "${self:custom.slack_api_token}"
+
+    SlackDefaultChannel:
+      Type: String
+      Description: "Slack channel to publish to."
+      Default: "${self:custom.slack_default_channel}"
+
+    SnsPublishResponse:
+      Type: String
+      Description: "Whether or not to publish function response to Sns"
+      Default: "${self:custom.sns_publish_response}"
+      AllowedValues:
+        - true
+        - false
+
+
   Resources:
     SlackResponseSnsTopic:
       Type: "AWS::SNS::Topic"
