@@ -16,6 +16,9 @@ custom:
   # issue with SLS variable interpolation
   slack_default_channel: "${env:SLACK_DEFAULT_CHANNEL, 'notifications'}"
 
+  # If you don't need the SNS response published, then don't publish it.
+  sns_publish_response: "${env:SNS_PUBLISH_RESPONSE, 'false'}"
+
   pythonRequirements:
     dockerizePip: false
 
@@ -37,7 +40,7 @@ functions:
     handler: handlers/aws_sns_to_slack_publisher.handler
     description: "Publish message from SNS to Slack"
     memorySize: 128
-    timeout: 10
+    timeout: 30
     iamRoleStatements:
       - Effect: "Allow"
         Action: "SNS:Publish"
@@ -46,6 +49,7 @@ functions:
     environment:
       SLACK_API_TOKEN: "${self:custom.slack_api_token}"
       SLACK_DEFAULT_CHANNEL: "${self:custom.slack_default_channel}"
+      SNS_PUBLISH_RESPONSE: "${self:custom.sns_publish_response}"
       RESPONSE_SNS_TOPIC_ARN:
         Ref: SlackResponseSnsTopic
 

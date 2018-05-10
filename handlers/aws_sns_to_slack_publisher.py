@@ -5,6 +5,7 @@ import logging
 import os
 import sys
 
+from boolean import boolean
 import boto3
 from botocore.exceptions import ClientError
 from slackclient import SlackClient
@@ -18,6 +19,7 @@ SLACK_API_TOKEN = os.environ.get('SLACK_API_TOKEN')
 SLACK_DEFAULT_CHANNEL = os.environ.get('SLACK_DEFAULT_CHANNEL')
 SLACK = SlackClient(SLACK_API_TOKEN)
 
+SNS_PUBLISH_RESPONSE = boolean(os.environ.get('SNS_PUBLISH_RESPONSE'))
 RESPONSE_SNS_TOPIC_ARN = os.environ.get('RESPONSE_SNS_TOPIC_ARN')
 SNS = boto3.client('sns')
 
@@ -137,14 +139,17 @@ def handler(event, context):
     slack_response = _publish_slack_message(SLACK_API_TOKEN,
                                             slack_channel,
                                             slack_message)
-    sns_response = _publish_sns_message(RESPONSE_SNS_TOPIC_ARN,
-                                        json.dumps(slack_response))
 
     resp = {
         'slack_response': slack_response,
-        'sns_response': sns_response,
         'status': 'OK'
     }
+
+    if SNS_PUBLISH_RESPONSE:
+        sns_response = _publish_sns_message(RESPONSE_SNS_TOPIC_ARN,
+                                            json.dumps(slack_response))
+        resp['sns_response'] = sns_response
+
 
     _logger.debug('Response: {}'.format(json.dumps(resp)))
     return resp
