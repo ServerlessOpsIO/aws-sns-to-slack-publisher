@@ -40,7 +40,7 @@ functions:
     handler: handlers/aws_sns_to_slack_publisher.handler
     description: "Publish message from SNS to Slack"
     memorySize: 128
-    timeout: 30
+    timeout: 60
     iamRoleStatements:
       - Effect: "Allow"
         Action: "SNS:Publish"

@@ -10,7 +10,7 @@ import boto3
 from botocore.exceptions import ClientError
 import jsonschema
 from slackclient import SlackClient
-from tenacity import retry, retry_if_exception_type, wait_exponential
+from tenacity import retry, retry_if_exception_type, stop_after_delay, wait_exponential
 
 log_level = os.environ.get('LOG_LEVEL', 'INFO')
 logging.root.setLevel(logging.getLevelName(log_level))  # type: ignore
@@ -65,7 +65,7 @@ class SnsPublishError(HandlerBaseError):
     '''SNS publish error'''
 
 
-@retry(wait=wait_exponential(), retry=retry_if_exception_type(SlackChannelListError))
+@retry(wait=wait_exponential(), stop=stop_after_delay(15), retry=retry_if_exception_type(SlackChannelListError))
 def _check_slack_channel_exists(token: str, channel: str) -> None:
     '''Check given Slack channel exists'''
     r = SLACK.api_call(
@@ -95,7 +95,7 @@ def _get_message_from_event(event: dict) -> dict:
     return json.loads(event.get('Records')[0].get('Sns').get('Message'))
 
 
-@retry(wait=wait_exponential())
+@retry(wait=wait_exponential(), stop=stop_after_delay(15))
 def _publish_slack_message(token: str, channel: str, message: dict) -> dict:
     '''Publish message to Slack'''
     message['channel'] = channel
@@ -115,7 +115,7 @@ def _publish_slack_message(token: str, channel: str, message: dict) -> dict:
         return r
 
 
-@retry(wait=wait_exponential())
+@retry(wait=wait_exponential(), stop=stop_after_delay(15))
 def _publish_sns_message(sns_topic_arn: str, message: str) -> dict:
     '''Publish message to SNS topic'''
     try:
