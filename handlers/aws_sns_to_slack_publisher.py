@@ -8,6 +8,7 @@ import sys
 from boolean import boolean
 import boto3
 from botocore.exceptions import ClientError
+import jsonschema
 from slackclient import SlackClient
 from tenacity import retry, retry_if_exception_type, wait_exponential
 
@@ -18,6 +19,9 @@ _logger = logging.getLogger(__name__)
 SLACK_API_TOKEN = os.environ.get('SLACK_API_TOKEN')
 SLACK_DEFAULT_CHANNEL = os.environ.get('SLACK_DEFAULT_CHANNEL')
 SLACK = SlackClient(SLACK_API_TOKEN)
+SLACK_SCHEMA_FILE_PATH = os.path.join(os.path.dirname(__file__), '../slack-message-schema.json')
+with open(SLACK_SCHEMA_FILE_PATH) as f:
+    SLACK_MESSAGE_SCHEMA = json.load(f)
 
 SNS_PUBLISH_RESPONSE = boolean(os.environ.get('SNS_PUBLISH_RESPONSE', 'false'))
 RESPONSE_SNS_TOPIC_ARN = os.environ.get('RESPONSE_SNS_TOPIC_ARN')
@@ -28,7 +32,10 @@ class HandlerBaseError(Exception):
     '''Base error class'''
 
 
-class SlackApiError(HandlerBaseError):
+class SlackBaseError(HandlerBaseError):
+    '''Base Slack Error'''
+
+class SlackApiError(SlackBaseError):
     '''Slack API error class'''
     def __init__(self, response: dict):
         self.msg = 'Slack error - {}'.format(response.get('error'))
@@ -39,11 +46,15 @@ class SlackChannelListError(SlackApiError):
     '''Slack publish error'''
 
 
+class SlackMessageValidationError(SlackBaseError):
+    '''Slack message format error'''
+
+
 class SlackPublishError(SlackApiError):
     '''Slack publish error'''
 
 
-class SlackInvalidChannelNameError(HandlerBaseError):
+class SlackInvalidChannelNameError(SlackBaseError):
     '''Slack invalid channel name'''
     def __init__(self, channel: str):
         self.msg = 'invalid channel name - {}'.format(channel)
@@ -130,10 +141,22 @@ def _sanitize_slack_channel_name(channel_name: str) -> str:
     return fixed_name
 
 
+def _validate_slack_message_schema(message: dict, schema: dict) -> None:
+    '''Validate the incoming slack message format'''
+    try:
+        jsonschema.validate(message, schema)
+    except jsonschema.ValidationError as e:
+        exc_info = sys.exc_info()
+        raise SlackMessageValidationError(e).with_traceback(exc_info[2])
+
+    return
+
+
 def handler(event, context):
     '''Function entry'''
     _logger.debug('Event received: {}'.format(json.dumps(event)))
     slack_message = _get_message_from_event(event)
+    _validate_slack_message_schema(slack_message, SLACK_MESSAGE_SCHEMA)
     slack_channel = _sanitize_slack_channel_name(SLACK_DEFAULT_CHANNEL)
     _check_slack_channel_exists(SLACK_API_TOKEN, slack_channel)
     slack_response = _publish_slack_message(SLACK_API_TOKEN,

@@ -21,6 +21,10 @@ EVENT_FILE = os.path.join(
 
 SNS_TOPIC_NAME = "mock-aws-sns-to-slack-publisher-responses"
 SLACK_CHANNEL = "#testing"
+SLACK_SCHEMA_FILE_PATH = os.path.join(
+    os.path.dirname(__file__),
+    '../../../slack-message-schema.json'
+)
 
 
 @pytest.fixture()
@@ -33,13 +37,19 @@ def event(event_file=EVENT_FILE):
 @pytest.fixture()
 def slack_message(event):
     '''Slack message'''
-    return json.dumps(h._get_message_from_event(event))
+    return h._get_message_from_event(event)
 
 
 @pytest.fixture()
 def slack_channel(channel=SLACK_CHANNEL):
     '''Slack channel'''
     return channel
+
+@pytest.fixture()
+def slack_message_schema():
+    '''Slack message schema'''
+    with open(SLACK_SCHEMA_FILE_PATH) as f:
+        return json.load(f)
 
 
 @pytest.fixture()
@@ -106,3 +116,93 @@ def test__sanitize_slack_channel_name_dirty():
     channel = '#dirty'
     new_channel = h._sanitize_slack_channel_name(channel)
     assert new_channel[0] != '#'
+
+
+def test__validate_slack_message_schema(slack_message, slack_message_schema):
+    '''Validate a Slack message.'''
+    # Throws an exception on bad in put.
+    h._validate_slack_message_schema(slack_message, slack_message_schema)
+
+
+def test__validate_slack_message_schema_missing_text(slack_message, slack_message_schema):
+    '''Validate a Slack message.'''
+    slack_message['bad_text'] = slack_message['text']
+    slack_message.pop('text')
+
+    error = None
+    try:
+        h._validate_slack_message_schema(slack_message, slack_message_schema)
+    except h.SlackMessageValidationError as e:
+        error = e
+
+    assert isinstance(error, h.SlackMessageValidationError)
+
+def test__validate_slack_message_schema_has_attachment(slack_message, slack_message_schema):
+    '''Validate message with attachment is fine'''
+    slack_message['attachment'] = [{'text': 'attachment text'}]
+    h._validate_slack_message_schema(slack_message, slack_message_schema)
+
+
+def test__validate_slack_message_schema_has_attachment_bad_type(slack_message, slack_message_schema):
+    '''Validate message with attachment is fine'''
+    slack_message['attachments'] = {'text': 'attachment text'}
+
+    error = None
+    try:
+        h._validate_slack_message_schema(slack_message, slack_message_schema)
+    except h.SlackMessageValidationError as e:
+        error = e
+
+    assert isinstance(error, h.SlackMessageValidationError)
+
+
+def test__validate_slack_message_schema_has_attachment_missing_text_property(slack_message, slack_message_schema):
+    '''Validate message with attachment is fine'''
+    slack_message['attachments'] = [{'missing_text': 'field text'}]
+
+    error = None
+    try:
+        h._validate_slack_message_schema(slack_message, slack_message_schema)
+    except h.SlackMessageValidationError as e:
+        error = e
+
+    assert isinstance(error, h.SlackMessageValidationError)
+
+
+def test__validate_slack_message_schema_has_attachment_has_fields(slack_message, slack_message_schema):
+    '''Validate message with attachment is fine'''
+    slack_message['attachments'] = [
+        {
+            'text': 'attachment text',
+            'fields': [
+                {
+                    'title': 'title',
+                    'value': 'value',
+                }
+            ]
+        }
+    ]
+
+    h._validate_slack_message_schema(slack_message, slack_message_schema)
+
+def test__validate_slack_message_schema_has_attachment_has_fields_missing_property(slack_message, slack_message_schema):
+    '''Validate message with attachment is fine'''
+    slack_message['attachments'] = [
+        {
+            'text': 'attachment text',
+            'fields': [
+                {
+                    'title': 'title',
+                }
+            ]
+        }
+    ]
+
+    error = None
+    try:
+        h._validate_slack_message_schema(slack_message, slack_message_schema)
+    except h.SlackMessageValidationError as e:
+        error = e
+
+    assert isinstance(error, h.SlackMessageValidationError)
+
