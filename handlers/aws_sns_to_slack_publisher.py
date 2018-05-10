@@ -19,7 +19,7 @@ SLACK_API_TOKEN = os.environ.get('SLACK_API_TOKEN')
 SLACK_DEFAULT_CHANNEL = os.environ.get('SLACK_DEFAULT_CHANNEL')
 SLACK = SlackClient(SLACK_API_TOKEN)
 
-SNS_PUBLISH_RESPONSE = boolean(os.environ.get('SNS_PUBLISH_RESPONSE'))
+SNS_PUBLISH_RESPONSE = boolean(os.environ.get('SNS_PUBLISH_RESPONSE', 'false'))
 RESPONSE_SNS_TOPIC_ARN = os.environ.get('RESPONSE_SNS_TOPIC_ARN')
 SNS = boto3.client('sns')
 
