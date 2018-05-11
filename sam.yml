@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 'Publish messages received from SNS to Slack'
+Resources:
+  EventPublishSnsSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      TopicArn:
+        'Fn::ImportValue':
+          Ref: SnsPublisherTopicExport
+      Protocol: lambda
+      Endpoint:
+        'Fn::GetAtt':
+          - SlackPublishLambdaFunction
+          - Arn
+  S3BillingItemWriterLambdaPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName:
+        Ref: SlackPublishLambdaFunction
+      Principal: sns.amazonaws.com
+      SourceArn:
+        'Fn::ImportValue':
+          Ref: SnsPublisherTopicExport
+  SlackResponseSnsTopic:
+    Type: 'AWS::SNS::Topic'
+  SlackPublish:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: handlers/aws_sns_to_slack_publisher.handler
+      Runtime: python3.6
+      CodeUri: >-
+        /Users/tom/Source/serverlessops/aws-sns-to-slack-publisher/.serverless/aws-sns-to-slack-publisher.zip
+      Description: Publish message from SNS to Slack
+      MemorySize: 128
+      Timeout: 60
+      Environment:
+        Variables:
+          LOG_LEVEL: INFO
+          SLACK_API_TOKEN:
+            Ref: SlackApiToken
+          SLACK_DEFAULT_CHANNEL:
+            Ref: SlackDefaultChannel
+          SNS_PUBLISH_RESPONSE:
+            Ref: SnsPublishResponse
+          RESPONSE_SNS_TOPIC_ARN:
+            Ref: SlackResponseSnsTopic
+Outputs:
+  SlackResponseSnsTopicArn:
+    Description: AWS SNS Topic ARN
+    Value:
+      Ref: SlackResponseSnsTopic
+    Export:
+      Name: aws-sns-to-slack-publisher-dev-SlackResponseSnsTopicArn
+Parameters:
+  SlackApiToken:
+    Type: String
+    Description: Slack API token
+  SlackDefaultChannel:
+    Type: String
+    Description: Slack channel to publish to.
+    Default: notifications
+  SnsPublishResponse:
+    Type: String
+    Description: Whether or not to publish function response to Sns
+    Default: 'false'
+    AllowedValues:
+      - true
+      - false
+  SnsPublisherTopicExport:
+    Type: String
+    Description: Name of the CloudFormation export wit the Sns topic ARN to subscribe to
