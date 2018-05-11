@@ -51,7 +51,8 @@ Outputs:
     Value:
       Ref: SlackResponseSnsTopic
     Export:
-      Name: aws-sns-to-slack-publisher-dev-SlackResponseSnsTopicArn
+      Name:
+        Fn::Sub: ${AWS::StackName}-SlackResponseSnsTopicArn
 Parameters:
   SlackApiToken:
     Type: String
