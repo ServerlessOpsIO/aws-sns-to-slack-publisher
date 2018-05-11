@@ -58,8 +58,10 @@ jobs:
       deploy:
         - provider: script
           script: aws cloudformation package --template-file $SAM_TEMPLATE --output-template-file $SAM_TEMPLATE_PACKAGED --s3-bucket ${S3_BUCKET_DEV} --s3-prefix ${S3_PREFIX}
+          skip_cleanup: true
         - provider: script
           script: aws s3 cp $SAM_TEMPLATE_PACKAGED s3://${S3_BUCKET_DEV}/${S3_PREFIX}/
+          skip_cleanup: true
 
     - stage: integration-test
       sudo: required
