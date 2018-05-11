@@ -30,8 +30,6 @@ Resources:
     Properties:
       Handler: handlers/aws_sns_to_slack_publisher.handler
       Runtime: python3.6
-      CodeUri: >-
-        /Users/tom/Source/serverlessops/aws-sns-to-slack-publisher/.serverless/aws-sns-to-slack-publisher.zip
       Description: Publish message from SNS to Slack
       MemorySize: 128
       Timeout: 60
