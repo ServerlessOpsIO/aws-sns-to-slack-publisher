@@ -1,0 +1,121 @@
+env:
+  global:
+    - DIST_DIR="${PWD}/dist"
+    - PROJECT_NAME=$(basename ${PWD})
+    - ARTIFACT_ID="${TRAVIS_BUILD_NUMBER}-${TRAVIS_COMMIT}"
+    - ARTIFACT="${ARTIFACT_ID}.zip"
+    - CFN_TESTING_STACK="${PROJECT_NAME}-${ARTIFACT_ID}"
+    - SAM_TEMPLATE="sam.yml"
+    - SAM_TEMPLATE_PACKAGED="sam-packaged.yml"
+    - S3_BUCKET_PREFIX="serverlessops-opensource-deploy"
+    - S3_BUCKET_DEV="${S3_BUCKET_PREFIX}-dev"
+    - S3_BUCKET_PROD="${S3_BUCKET_PREFIX}-prod"
+    - S3_PREFIX=${PROJECT_NAME}/${ARTIFACT_ID}
+    - AWS_REGION=us-east-1
+    # AWS_ACCESS_KEY_ID_DEV
+    # AWS_SECRET_ACCESS_KEY_DEV
+    # AWS_ACCESS_KEY_ID_PROD
+    # AWS_SECRET_ACCESS_KEY_PROD
+
+stages:
+  - test
+  # We can take the PR conditional out when we get to a point of deploying
+  # to an environment to do integration testing.
+  # FIXME: We need an input SNS to connect to.
+  - name: integration-test
+    #if: branch = master AND type != pull_request
+    if: branch = ''   # disable
+  - name: promote-to-prod
+    #if: branch = master AND type != pull_request
+  - name: deploy-to-sar
+    if: branch = master AND type != pull_request
+
+jobs:
+  include:
+    - stage: test
+      sudo: required
+      services:
+        - docker
+      language: python
+      python: '3.6'
+      install:
+        - pip install awscli
+        #- pip install aws-sam-cli
+        - aws configure set default.region $AWS_REGION
+        - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_DEV
+        - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY_DEV
+        - pip install -r requirements.txt -t ./
+        - pip install -r requirements-dev.txt
+      script:
+        # Fixes strange failure. ref: https://github.com/travis-ci/travis-ci/issues/7940
+        - export BOTO_CONFIG=/dev/null
+        - pytest -v tests/unit
+        #- sam validate -t $SAM_TEMPLATE
+        #- sam package -t $SAM_TEMPLATE --s3-bucket $S3_BUCKET_DEV --s3-prefix ${PROJECT_NAME}/${ARTIFACT_ID}
+      after_script:
+        # Ensure our creds are cleaned up.
+        - rm -rf ~/.aws
+      deploy:
+        - provider: script
+          script: aws cloudformation package --template-file $SAM_TEMPLATE --output-template-file $SAM_TEMPLATE_PACKAGED --s3-bucket ${S3_BUCKET_DEV} --s3-prefix ${S3_PREFIX}
+        - provider: script
+          script: aws s3 cp $SAM_TEMPLATE_PACKAGED s3://${S3_BUCKET_DEV}/${S3_PREFIX}/
+
+    - stage: integration-test
+      sudo: required
+      services:
+        - docker
+      language: python
+      python: '3.6'
+      install:
+        - pip install awscli
+        #- pip install aws-sam-cli
+        - aws configure set default.region $AWS_REGION
+        - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_DEV
+        - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY_DEV
+        - pip install -r requirements.txt -t ./
+        - pip install -r requirements-dev.txt
+      script:
+        - aws s3 cp "s3://${S3_BUCKET_DEV}/${S3_PREFIX}/${SAM_TEMPLATE_PACKAGED}" ./
+        - aws cloudformation deploy --template-file $SAM_TEMPLATE_PACKAGED --stack-name $CFN_TESTING_STACK --capabilities CAPABILITY_IAM
+        - pytest -v tests/integration
+      after_script:
+        - aws cloudformation delete-stack --stack-name $CFN_TESTING_STACK
+        # Ensure our creds are cleaned up.
+        - rm -rf ~/.aws
+
+    - stage: promote-to-prod
+      sudo: required
+      services:
+        - docker
+      language: python
+      python: '3.6'
+      install:
+        - pip install awscli
+        #- pip install aws-sam-cli
+        - aws configure set default.region $AWS_REGION
+      script:
+        - mkdir $DIST_DIR
+        - cd $DIST_DIR
+        # fetch from Dev
+        - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_DEV
+        - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY_DEV
+        - aws s3 sync "s3://${S3_BUCKET_DEV}/${S3_PREFIX}/" ./
+      after_script:
+        - aws cloudformation delete-stack --stack-name $CFN_TESTING_STACK
+        # Ensure our creds are cleaned up.
+        - rm -rf ~/.aws
+      deploy:
+        - provider: s3
+          skip_cleanup: true
+          bucket: "$S3_BUCKET_PROD"
+          upload_dir: "$S3_PREFIX"
+          local_dir: "$DIST_DIR"
+          acl: public_read
+          on:
+            repo: "$TRAVIS_REPO_SLUG"
+          access_key_id: "$AWS_ACCESS_KEY_ID_PROD"
+          secret_access_key: "$AWS_SECRET_ACCESS_KEY_PROD"
+
+
+

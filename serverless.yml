@@ -4,6 +4,7 @@ service: aws-sns-to-slack-publisher
 plugins:
   - serverless-python-requirements
   - serverless-iam-roles-per-function
+  - serverless-sam
 
 
 custom:

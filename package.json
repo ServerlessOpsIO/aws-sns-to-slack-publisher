@@ -5,6 +5,7 @@
   "dependencies": {},
   "devDependencies": {
     "serverless-iam-roles-per-function": "^0.1.5",
-    "serverless-python-requirements": "^4.0.3"
+    "serverless-python-requirements": "^4.0.3",
+    "serverless-sam": "0.0.5"
   }
 }

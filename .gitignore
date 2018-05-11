@@ -39,3 +39,6 @@ node_modules/
 .settings/
 .project
 .pydevproject
+
+# Cruft
+.DS_Store
