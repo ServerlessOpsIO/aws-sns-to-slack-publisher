@@ -87,4 +87,4 @@ $ SLACK_API_TOKEN=|TOKEN| SNS_PUBLISHER_TOPIC_EXPORT=|CFN_EXPORT| serverless dep
 
 These values may be used by other services in your AWS infrastructure.
 
-* __${stack_name}-${stage}-SlackResponseSnsTopicArn__: Topic to which Slack publishing responses are sent.
+* __${AWS::StackName}-SlackResponseSnsTopicArn__: Topic to which Slack publishing responses are sent.
