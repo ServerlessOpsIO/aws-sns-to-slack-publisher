@@ -26,7 +26,7 @@ stages:
     #if: branch = master AND type != pull_request
     if: branch = ''   # disable
   - name: promote-to-prod
-    if: branch = master AND type != pull_request
+    #if: branch = master AND type != pull_request
   - name: deploy-to-sar
     if: branch = master AND type != pull_request
 
@@ -81,6 +81,32 @@ jobs:
         - aws s3 cp "s3://${S3_BUCKET_DEV}/${S3_PREFIX}/${SAM_TEMPLATE_PACKAGED}" ./
         - aws cloudformation deploy --template-file $SAM_TEMPLATE_PACKAGED --stack-name $CFN_TESTING_STACK --capabilities CAPABILITY_IAM
         - pytest -v tests/integration
+      after_script:
+        - aws cloudformation delete-stack --stack-name $CFN_TESTING_STACK
+        # Ensure our creds are cleaned up.
+        - rm -rf ~/.aws
+
+    - stage: promote-to-prod
+      sudo: required
+      services:
+        - docker
+      language: python
+      python: '3.6'
+      install:
+        - pip install awscli
+        #- pip install aws-sam-cli
+        - aws configure set default.region $AWS_REGION
+      script:
+        - mkdir $DIST_DIR
+        - cd $DIST_DIR
+        # fetch from Dev
+        - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_DEV
+        - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY_DEV
+        - aws s3 sync "s3://${S3_BUCKET_DEV}/${S3_PREFIX}/" ./
+        # Send to prod
+        - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_PROD
+        - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY_PROD
+        - aws s3 sync ./ "s3://${S3_BUCKET_PROD}/${S3_PREFIX}/"
       after_script:
         - aws cloudformation delete-stack --stack-name $CFN_TESTING_STACK
         # Ensure our creds are cleaned up.
