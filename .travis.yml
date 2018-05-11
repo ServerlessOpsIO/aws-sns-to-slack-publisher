@@ -52,16 +52,14 @@ jobs:
         - pytest -v tests/unit
         #- sam validate -t $SAM_TEMPLATE
         #- sam package -t $SAM_TEMPLATE --s3-bucket $S3_BUCKET_DEV --s3-prefix ${PROJECT_NAME}/${ARTIFACT_ID}
-        - aws cloudformation package --template-file $SAM_TEMPLATE --output-template-file $SAM_TEMPLATE_PACKAGED --s3-bucket ${S3_BUCKET_DEV} --s3-prefix ${S3_PREFIX}
-        - aws s3 cp $SAM_TEMPLATE_PACKAGED s3://${S3_BUCKET_DEV}/${S3_PREFIX}/
       after_script:
         # Ensure our creds are cleaned up.
         - rm -rf ~/.aws
-      #deploy:
-      #  - provider: script
-      #    script: aws cloudformation package --template-file $SAM_TEMPLATE --output-template-file $SAM_TEMPLATE_PACKAGED --s3-bucket ${S3_BUCKET_DEV} --s3-prefix ${S3_PREFIX}
-      #  - provider: script
-      #    script: aws s3 cp $SAM_TEMPLATE_PACKAGED s3://${S3_BUCKET_DEV}/${S3_PREFIX}/
+      deploy:
+        - provider: script
+          script: aws cloudformation package --template-file $SAM_TEMPLATE --output-template-file $SAM_TEMPLATE_PACKAGED --s3-bucket ${S3_BUCKET_DEV} --s3-prefix ${S3_PREFIX}
+        - provider: script
+          script: aws s3 cp $SAM_TEMPLATE_PACKAGED s3://${S3_BUCKET_DEV}/${S3_PREFIX}/
 
     - stage: integration-test
       sudo: required
@@ -103,13 +101,21 @@ jobs:
         - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_DEV
         - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY_DEV
         - aws s3 sync "s3://${S3_BUCKET_DEV}/${S3_PREFIX}/" ./
-        # Send to prod
-        - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_PROD
-        - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY_PROD
-        - aws s3 sync ./ "s3://${S3_BUCKET_PROD}/${S3_PREFIX}/"
       after_script:
         - aws cloudformation delete-stack --stack-name $CFN_TESTING_STACK
         # Ensure our creds are cleaned up.
         - rm -rf ~/.aws
+      deploy:
+        - provider: s3
+          skip_cleanup: true
+          bucket: "$S3_BUCKET_PROD"
+          upload_dir: "$S3_PREFIX"
+          local_dir: "$DIST_DIR"
+          acl: public_read
+          on:
+            repo: "$TRAVIS_REPO_SLUG"
+          access_key_id: "$AWS_ACCESS_KEY_ID_PROD"
+          secret_access_key: "$AWS_SECRET_ACCESS_KEY_PROD"
+
 
 
