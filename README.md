@@ -47,8 +47,6 @@ Once you've saved settings, your Slack bot is configured.
 * __Event Type:__ AWS SNS
 * __SNS Message:__ Message should be a JSON formatted string that conforms to the _chat.postMessage_ Slack API method.  See also [slack-message-schema.json](/slack-message-schema.json) in this repository to understand more about the message shape.
 
-<iframe src="/slack-message-schema.json?raw=true" frameborder="0"></iframe>
-
 ## Deployment
 
 You will need the following in order to deploy and use this service.
