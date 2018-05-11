@@ -13,16 +13,6 @@ Resources:
         'Fn::GetAtt':
           - SlackPublishLambdaFunction
           - Arn
-  S3BillingItemWriterLambdaPermission:
-    Type: 'AWS::Lambda::Permission'
-    Properties:
-      Action: 'lambda:InvokeFunction'
-      FunctionName:
-        Ref: SlackPublishLambdaFunction
-      Principal: sns.amazonaws.com
-      SourceArn:
-        'Fn::ImportValue':
-          Ref: SnsPublisherTopicExport
   SlackResponseSnsTopic:
     Type: 'AWS::SNS::Topic'
   SlackPublish:
@@ -44,6 +34,17 @@ Resources:
             Ref: SnsPublishResponse
           RESPONSE_SNS_TOPIC_ARN:
             Ref: SlackResponseSnsTopic
+      Events:
+        SnsMessage:
+          Type: SNS
+          Properties:
+            Topic:
+              Fn::ImportValue:
+                Ref: SnsPublisherTopicExport
+      Policies:
+        - S3CrudPolicy:
+            BucketName:
+              Ref: SlackResponseSnsTopic
 Outputs:
   SlackResponseSnsTopicArn:
     Description: AWS SNS Topic ARN
