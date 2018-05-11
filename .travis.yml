@@ -52,7 +52,7 @@ jobs:
         #- sam validate -t $SAM_TEMPLATE
         #- sam package -t $SAM_TEMPLATE --s3-bucket $S3_BUCKET_DEV --s3-prefix ${PROJECT_NAME}/${ARTIFACT_ID}
         - aws cloudformation package --template-file $SAM_TEMPLATE --output-template-file $SAM_TEMPLATE_PACKAGED --s3-bucket ${S3_BUCKET_DEV} --s3-prefix ${S3_PREFIX}
-        - aws s3 cp $SAM_TEMPLATE_PACKAGED s3://${S3_BUCKET}/${S3_PREFIX}
+        - aws s3 cp $SAM_TEMPLATE_PACKAGED s3://${S3_BUCKET_DEV}/${S3_PREFIX}/
       after_script:
         # Ensure our creds are cleaned up.
         - rm -rf ~/.aws
