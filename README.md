@@ -2,7 +2,7 @@
 [![Serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
 [![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
 
-Publish a message received from SNS to Slack
+Publish a message received from SNS to Slack.
 
 ![System Architecture](/diagram.png?raw=true "System Architecture")
 
@@ -47,6 +47,8 @@ Once you've saved settings, your Slack bot is configured.
 * __Event Type:__ AWS SNS
 * __SNS Message:__ Message should be a JSON formatted string that conforms to the _chat.postMessage_ Slack API method.  See also [slack-message-schema.json](/slack-message-schema.json) in this repository to understand more about the message shape.
 
+<iframe src="/slack-message-schema.json?raw=true" frameborder="0"></iframe>
+
 ## Deployment
 
 You will need the following in order to deploy and use this service.
@@ -59,7 +61,14 @@ In addition, this service can optionally publish responses from the Slack API to
 
 This application is intended to be deployed using [AWS Serverless Application Repository](https://aws.amazon.com/serverless/serverlessrepo/).  However, [Serverless Framework](https://www.serverless.com) is also supported.
 
-### Serverless Application Repository
+### Serverless Application Repository / CloudFormation
+
+When deploying via Serverless Application Repository or CloudFormation, you will be presented with the following parameters to configure.
+
+* __SlackApiToken (Required):__ API token to use when publishing to slack.
+* __SlackDefaultChannel:__ Channel messages should be published to.
+* __SnsPublishResponse:__ Name of the CloudFormation export to find the event source SNS topic to subscribe
+* __SnsPublisherTopicExport (Required):__ Whether to publish Slack API responses to an SNS topic.
 
 ### Serverless Framework
 
