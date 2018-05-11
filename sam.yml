@@ -11,7 +11,7 @@ Resources:
       Protocol: lambda
       Endpoint:
         'Fn::GetAtt':
-          - SlackPublishLambdaFunction
+          - SlackPublish
           - Arn
   SlackResponseSnsTopic:
     Type: 'AWS::SNS::Topic'
