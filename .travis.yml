@@ -21,8 +21,10 @@ stages:
   - test
   # We can take the PR conditional out when we get to a point of deploying
   # to an environment to do integration testing.
+  # FIXME: We need an input SNS to connect to.
   - name: integration-test
     #if: branch = master AND type != pull_request
+    if: branch = ''   # disable
   - name: promote-to-prod
     if: branch = master AND type != pull_request
   - name: deploy-to-sar
@@ -60,7 +62,6 @@ jobs:
       #    script: aws cloudformation package --template-file $SAM_TEMPLATE --output-template-file $SAM_TEMPLATE_PACKAGED --s3-bucket ${S3_BUCKET_DEV} --s3-prefix ${S3_PREFIX}
       #  - provider: script
       #    script: aws s3 cp $SAM_TEMPLATE_PACKAGED s3://${S3_BUCKET_DEV}/${S3_PREFIX}/
-
 
     - stage: integration-test
       sudo: required
