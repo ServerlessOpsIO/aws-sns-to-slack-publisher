@@ -42,7 +42,7 @@ Resources:
               Fn::ImportValue:
                 Ref: SnsPublisherTopicExport
       Policies:
-        - S3CrudPolicy:
+        - SNSPublishMessagePolicy:
             BucketName:
               Ref: SlackResponseSnsTopic
 Outputs:
