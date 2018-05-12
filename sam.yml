@@ -43,7 +43,7 @@ Resources:
                 Ref: SnsPublisherTopicExport
       Policies:
         - SNSPublishMessagePolicy:
-            BucketName:
+            TopicName:
               Ref: SlackResponseSnsTopic
 Outputs:
   SlackResponseSnsTopicArn:
