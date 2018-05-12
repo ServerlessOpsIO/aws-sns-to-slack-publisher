@@ -124,19 +124,6 @@ def test__validate_slack_message_schema(slack_message, slack_message_schema):
     h._validate_slack_message_schema(slack_message, slack_message_schema)
 
 
-def test__validate_slack_message_schema_missing_text(slack_message, slack_message_schema):
-    '''Validate a Slack message.'''
-    slack_message['bad_text'] = slack_message['text']
-    slack_message.pop('text')
-
-    error = None
-    try:
-        h._validate_slack_message_schema(slack_message, slack_message_schema)
-    except h.SlackMessageValidationError as e:
-        error = e
-
-    assert isinstance(error, h.SlackMessageValidationError)
-
 def test__validate_slack_message_schema_has_attachment(slack_message, slack_message_schema):
     '''Validate message with attachment is fine'''
     slack_message['attachment'] = [{'text': 'attachment text'}]
