@@ -1,6 +1,7 @@
 # aws-sns-to-slack-publisher
 [![Serverless](http://public.serverless.com/badges/v3.svg)](http://www.serverless.com)
 [![License](https://img.shields.io/badge/License-BSD%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
+[![Build Status](https://travis-ci.org/ServerlessOpsIO/aws-sns-to-slack-publisher.svg?branch=master)](https://travis-ci.org/ServerlessOpsIO/aws-sns-to-slack-publisher)
 
 Publish a message received from SNS to Slack.
 
