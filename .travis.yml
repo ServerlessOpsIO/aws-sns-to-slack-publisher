@@ -103,7 +103,7 @@ jobs:
         - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID_DEV
         - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY_DEV
         - aws s3 sync "s3://${S3_BUCKET_DEV}/${S3_PREFIX}/" ./
-        - aws cloudformation package --template-file $SAM_TEMPLATE --output-template-file $SAM_TEMPLATE_PACKAGED --s3-bucket ${S3_BUCKET_PROD} --s3-prefix ${S3_PREFIX}
+        - aws cloudformation package --template-file ../${SAM_TEMPLATE} --output-template-file $SAM_TEMPLATE_PACKAGED --s3-bucket ${S3_BUCKET_PROD} --s3-prefix ${S3_PREFIX}
       after_script:
         # Ensure our creds are cleaned up.
         - rm -rf ~/.aws
