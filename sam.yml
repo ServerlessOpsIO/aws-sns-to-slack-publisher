@@ -46,7 +46,7 @@ Resources:
             TopicName:
               Fn::GetAtt:
                 - SlackResponseSnsTopic
-                - Arn
+                - TopicName
 Outputs:
   SlackResponseSnsTopicArn:
     Description: AWS SNS Topic ARN
