@@ -16,13 +16,6 @@ EVENT_FILE = os.path.join(
     'aws_sns_to_slack_publisher.json'
 )
 
-SNS_TOPIC_NAME = "mock-aws-sns-to-slack-publisher-responses"
-SLACK_CHANNEL = "#testing"
-SLACK_SCHEMA_FILE_PATH = os.path.join(
-    os.path.dirname(__file__),
-    '../../../slack-message-schema.json'
-)
-
 
 @pytest.fixture()
 def event(event_file=EVENT_FILE):
