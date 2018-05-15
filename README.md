@@ -69,7 +69,7 @@ When deploying via Serverless Application Repository or CloudFormation, you will
 * __SnsPublishResponse:__ Name of the CloudFormation export to find the event source SNS topic to subscribe
 * __SnsPublisherTopicExport (Required):__ Whether to publish Slack API responses to an SNS topic.
 
-* AWS Serverless Application Repository: [aws-sns-to-slack-publisher](https://serverlessrepo.aws.amazon.com/applications/arn:aws:serverlessrepo:us-east-1:641494176294:applications~aws-sns-to-slack-publisher)
+__AWS Serverless Application Repository:__ [aws-sns-to-slack-publisher](https://serverlessrepo.aws.amazon.com/applications/arn:aws:serverlessrepo:us-east-1:641494176294:applications~aws-sns-to-slack-publisher)
 
 ### Serverless Framework
 
