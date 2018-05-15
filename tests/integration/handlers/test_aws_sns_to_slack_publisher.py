@@ -48,11 +48,12 @@ def test_handler(lambda_client, lambda_function, event):
     '''Test handler'''
     r = lambda_client.invoke(
         FunctionName=lambda_function,
-        InvocationType='Event',
+        InvocationType='RequestResponse',
         Payload=json.dumps(event).encode()
     )
 
-    slack_response = r.get('slack_response')
+    lambda_return = r.get('Payload').read()
+    slack_response = json.loads(lambda_return).get('slack_response')
 
     assert slack_response.get('ok') is True
 
