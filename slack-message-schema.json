@@ -1,8 +1,148 @@
 {
   "description": "Slack message format accepted by this service.",
+
+  "definitions": {
+    "text_object": {
+      "type": "object",
+      "required": ["type", "text"],
+      "properties": {
+        "type": {"type": "string", "enum": ["plain_text", "mrkdwn"]},
+        "text": {"type": "string"},
+        "emoji": {"type": "boolean"},
+        "verbatim": {"type": "boolean"}
+      }
+    },
+    "plain_text_object": {
+      "allOf": [
+        {"$ref": "#/definitions/text_object"},
+        {"properties": {"string": {"const": "plain_text"}}}
+      ]
+    },
+    "confirm_object": {
+      "type": "object",
+      "required": ["title", "text", "confirm", "deny"],
+      "properties": {
+        "title": {"$ref": "#/definitions/plain_text_object"},
+        "text": {"$ref": "#/definitions/text_object"},
+        "confirm": {"$ref": "#/definitions/plain_text_object"},
+        "deny": {"$ref": "#/definitions/plain_text_object"}
+      }
+    },
+    "image_element": {
+      "type": "object",
+      "required": ["type", "image_url", "alt_text"],
+      "properties": {
+        "type": {"const": "image"},
+        "image_url": {"type": "string"},
+        "alt_text": {"type": "string"}
+      }
+    },
+    "button_element": {
+      "type": "object",
+      "required": ["type", "text"],
+      "properties": {
+        "type": {"const": "button"},
+        "text": {"$ref": "#/definitions/text_object"},
+        "action_id": {"type": "string"},
+        "url": {"type": "string"},
+        "value": {"type": "string"},
+        "style": {"type": "string"},
+        "confirm": {"$ref": "#/definitions/confirm_object"}
+      }
+    },
+    "element_object": {
+      "oneOf": [
+        {"$ref": "#/definitions/image_element"},
+        {"$ref": "#/definitions/button_element"}
+      ]
+    },
+    "section_block": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {"const": "section"},
+        "text": {"$ref": "#/definitions/text_object"},
+        "block_id": {"type": "string"},
+        "fields": {
+          "type": "array",
+          "items": {"$ref": "#/definitions/text_object"}
+        },
+        "accessory": {"$ref": "#/definitions/element_object"}
+      }
+    },
+    "divider_block": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {"const": "divider"},
+        "block_id": {"type": "string"}
+      }
+    },
+    "image_block": {
+      "type": "object",
+      "required": ["type", "image_url", "alt_text"],
+      "properties": {
+        "type": {"const": "image"},
+        "image_url": {"type": "string"},
+        "alt_text": {"type": "string"},
+        "title": {"$ref": "#/definitions/text_object"},
+        "block_id": {"type": "string"}
+      }
+    },
+    "actions_block": {
+      "type": "object",
+      "required": ["type", "elements"],
+      "properties": {
+        "type": {"const": "actions"},
+        "elements": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {"$ref": "#/definitions/button_element"}
+            ]
+          },
+          "maxItems": 5
+        },
+        "block_id": {"type": "string"}
+      }
+    },
+    "context_block": {
+      "type": "object",
+      "required": ["type", "elements"],
+      "properties": {
+        "type": {"const": "context"},
+        "elements": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {"$ref": "#/definitions/image_element"},
+              {"$ref": "#/definitions/text_object"}
+            ]
+          },
+          "maxItems": 10
+        },
+        "block_id": {"type": "string"}
+      }
+    },
+    "layout_block": {
+      "oneOf": [
+        {"$ref": "#/definitions/section_block"},
+        {"$ref": "#/definitions/divider_block"},
+        {"$ref": "#/definitions/image_block"},
+        {"$ref": "#/definitions/actions_block"},
+        {"$ref": "#/definitions/context_block"}
+      ]
+    }
+  },
+
   "type": "object",
+  "required": ["text"],
   "properties": {
     "text": {"type": "string"},
+    "blocks": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/layout_block"}
+    },
     "attachments": {
       "type": "array",
       "items": {
