@@ -69,7 +69,7 @@ class SnsPublishError(HandlerBaseError):
 def _check_slack_channel_exists(token: str, channel: str) -> None:
     '''Check given Slack channel exists'''
     r = SLACK.api_call(
-        "channels.list",
+        "conversations.list",
         token=token,
     )
     _logger.debug('Slack response: {}'.format(json.dumps(r)))
