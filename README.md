@@ -30,7 +30,7 @@ Give the app a name and select the workspace.
 
 ![Slack Create App](/doc/create-new-app.png?raw=true "Slack Create App")
 
-### 3) Obtain OAth token and select permissions.
+### 3) Obtain OAuth token and select permissions.
 
 OAuth Tokens & Redirect URLs
 
